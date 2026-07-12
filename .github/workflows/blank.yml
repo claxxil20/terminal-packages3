@@ -87,12 +87,29 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
         
-      - name: Set up Android SDK/NDK for termux-packages
+      - name: Install Android SDK + NDK r29 directly
         run: |
           set -euo pipefail
-          cd terminal-packages3/termux-packages
-          TERMUX_NDK_VERSION=29 ./scripts/setup-android-sdk.sh
-      # Runs a single command using the runners shell
+          mkdir -p "$HOME/lib"
+          cd "$HOME/lib"
+
+          # NDK
+          curl -fL -o ndk-r29.zip \
+            https://dl.google.com/android/repository/android-ndk-r29-linux.zip
+          echo "4abbbcdc842f3d4879206e9695d52709603e52dd68d3c1fff04b3b5e7a308ecf  ndk-r29.zip" | sha256sum -c -
+          unzip -q ndk-r29.zip
+          rm ndk-r29.zip
+
+          # SDK cmdline-tools
+          mkdir -p android-sdk/cmdline-tools
+          curl -fL -o cmdline-tools.zip \
+            https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q cmdline-tools.zip -d android-sdk/cmdline-tools
+          mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
+
+          ls -d "$HOME/lib/android-ndk-r29" "$HOME/lib/android-sdk"
+          
+            # Runs a single command using the runners shell
       # The full, untruncated output always goes to build.log on disk. Only a
       # bounded slice of it is streamed to the live Actions console, so a run
       # with tens of thousands of build lines can't blow past GitHub's
