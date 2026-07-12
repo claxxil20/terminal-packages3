@@ -80,7 +80,7 @@ jobs:
       # next step regardless of outcome.
       - name: Build bootstrap
         env:
-          HOST_LAPKG_NAME: ${{ github.event.inputs.package_name }}
+          HOST_LAPKG_NAME: ${{ github.event.inputs.package_name || 'com.termux' }}
         run: |
           set -euo pipefail
           git clone --recurse-submodules https://github.com/claxxil20/terminal-packages3.git
