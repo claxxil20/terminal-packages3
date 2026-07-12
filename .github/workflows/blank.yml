@@ -5,10 +5,10 @@ name: CI
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+#  push:
+ #   branches: [ "main" ]
+ # pull_request:
+   # branches: [ "main" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -71,6 +71,11 @@ jobs:
           set -euo pipefail
           df -h /
 
+      - name: Set up Android SDK/NDK for termux-packages
+        run: |
+          set -euo pipefail
+          cd terminal-packages3/termux-packages
+          TERMUX_NDK_VERSION=29 ./scripts/setup-android-sdk.sh
       # Runs a single command using the runners shell
       # The full, untruncated output always goes to build.log on disk. Only a
       # bounded slice of it is streamed to the live Actions console, so a run
