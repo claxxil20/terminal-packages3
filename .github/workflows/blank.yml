@@ -83,9 +83,10 @@ jobs:
       - name: Set up Android SDK/NDK for termux-packages
         run: |
           set -euo pipefail
+          export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
           cd terminal-packages3/termux-packages
           TERMUX_NDK_VERSION=29 ./scripts/setup-android-sdk.sh
-
       # Runs a single command using the runners shell
       # The full, untruncated output always goes to build.log on disk. Only a
       # bounded slice of it is streamed to the live Actions console, so a run
