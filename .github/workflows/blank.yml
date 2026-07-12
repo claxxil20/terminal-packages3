@@ -41,6 +41,7 @@ jobs:
           set -euo pipefail
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
+          sudo mkdir -p /usr/local/lib/android
           sudo rm -rf /usr/local/.ghcup
           sudo rm -rf /opt/hostedtoolcache/CodeQL
           sudo rm -rf /opt/hostedtoolcache/go
