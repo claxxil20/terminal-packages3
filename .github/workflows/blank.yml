@@ -1,0 +1,137 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Android package name (e.g. com.termux)"
+        required: true
+        default: "com.termux"
+        type: string
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      - name: Disk space (before)
+        run: |
+          set -euo pipefail
+          df -h /
+
+      - name: Free disk space (lightweight)
+        run: |
+          set -euo pipefail
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /opt/hostedtoolcache/go
+          sudo rm -rf /opt/hostedtoolcache/node
+          sudo rm -rf /usr/local/share/powershell
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
+          docker image prune --all --force || true
+          docker builder prune --all --force || true
+          df -h /
+
+      - name: Move Docker data-root to /mnt/docker
+        run: |
+          set -euo pipefail
+          DOCKER_ROOT="/mnt/docker"
+          sudo systemctl stop docker
+          sudo mkdir -p "$DOCKER_ROOT"
+          if [ -d /var/lib/docker ] && [ -n "$(ls -A /var/lib/docker 2>/dev/null || true)" ]; then
+            sudo rsync -aHAX --delete /var/lib/docker/ "$DOCKER_ROOT/" || true
+          fi
+          echo "{\"data-root\": \"$DOCKER_ROOT\"}" | sudo tee /etc/docker/daemon.json
+          sudo systemctl start docker
+          docker info | sed -n '1,40p'
+          df -h /
+
+      - name: Disk space (after)
+        run: |
+          set -euo pipefail
+          df -h /
+
+      # Runs a single command using the runners shell
+      # The full, untruncated output always goes to build.log on disk. Only a
+      # bounded slice of it is streamed to the live Actions console, so a run
+      # with tens of thousands of build lines can't blow past GitHub's
+      # per-step (256 KB) / per-line (1000 KB) log limits or bury the actual
+      # error under noise. The complete log is uploaded as an artifact in the
+      # next step regardless of outcome.
+      - name: Build bootstrap
+        env:
+          HOST_LAPKG_NAME: ${{ github.event.inputs.package_name }}
+        run: |
+          set -euo pipefail
+          git clone --recurse-submodules https://github.com/claxxil20/terminal-packages3.git
+          cd terminal-packages3
+          chmod +x build.sh generate-bootstrap-archive.sh
+
+          cmd_str="./build.sh -a aarch64 && ./generate-bootstrap-archive.sh -a aarch64"
+
+          set +e
+          script -q -e -f -c "$cmd_str" ../build.log
+          build_status=$?
+          set -e
+
+          echo "::group::Build log (tail, last 300 lines)"
+          tail -n 300 ../build.log
+          echo "::endgroup::"
+
+          if [ "$build_status" -ne 0 ]; then
+            echo "::group::Build log (lines matching error/fail/fatal)"
+            grep -n -iE "error|fail|fatal" ../build.log | tail -n 200 || echo "(no matching lines found)"
+            echo "::endgroup::"
+            echo "Build failed with exit code $build_status. Full log: see the build-log artifact."
+            exit "$build_status"
+          fi
+
+      # Always upload the full build log as an artifact, regardless of success
+      # or failure, so the untruncated output is available even if the live
+      # Actions UI shows a truncation notice.
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: warn
+
+      # Uploads the generated bootstrap archives so they're downloadable from the run summary
+      - name: Upload bootstrap artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-aarch64
+          path: |
+            terminal-packages3/output/**/bootstrap-*.zip
+            terminal-packages3/output/**/bootstrap-*.zip.9
+            terminal-packages3/output/**/generate-bootstrap-*.log
+          if-no-files-found: error
+          retention-days: 14
+
+      # Runs a set of commands using the runners shell
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+          
