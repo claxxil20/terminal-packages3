@@ -71,11 +71,22 @@ jobs:
           set -euo pipefail
           df -h /
 
+      # MOVED UP: this must run before the NDK setup step below, since that
+      # step does `cd terminal-packages3/termux-packages` and that directory
+      # doesn't exist until this clone happens. Previously the clone lived
+      # inside "Build bootstrap", which ran AFTER the NDK setup step tried
+      # to cd into a directory that didn't exist yet.
+      - name: Clone terminal-packages3
+        run: |
+          set -euo pipefail
+          git clone --recurse-submodules https://github.com/claxxil20/terminal-packages3.git
+
       - name: Set up Android SDK/NDK for termux-packages
         run: |
           set -euo pipefail
           cd terminal-packages3/termux-packages
           TERMUX_NDK_VERSION=29 ./scripts/setup-android-sdk.sh
+
       # Runs a single command using the runners shell
       # The full, untruncated output always goes to build.log on disk. Only a
       # bounded slice of it is streamed to the live Actions console, so a run
@@ -88,7 +99,6 @@ jobs:
           HOST_LAPKG_NAME: ${{ github.event.inputs.package_name || 'com.termux' }}
         run: |
           set -euo pipefail
-          git clone --recurse-submodules https://github.com/claxxil20/terminal-packages3.git
           cd terminal-packages3
           chmod +x build.sh generate-bootstrap-archive.sh
 
@@ -139,4 +149,3 @@ jobs:
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
-          
