@@ -86,6 +86,14 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: Prepare /data for termux-packages build
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /data
+          sudo chown "$USER:$USER" /data
+          ls -ld /data
+
         
       - name: Install Android SDK + NDK r29 directly
         run: |
