@@ -44,9 +44,6 @@ declare -a PATCHES=(
   # Fix dependencies in binutils-libs
   "binutils-libs-fix-dependencies.patch"
 
-  # libxml2 v2.14.4 has build errors
-  # "libxml2-revert-to-2.14.3.patch"
-
   # Remove 'scalar' binary from $PREFIX/bin and make it a symlink
   # to $PREFIX/libexec/git-core/scalar
   "git-symlink-scalar.patch"
