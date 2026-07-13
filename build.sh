@@ -40,7 +40,6 @@ declare -a PATCHES=(
   # Required to fix some build failures
   "libdb-depend-on-android-shmem.patch"
   "libunbound-depend-on-android-shmem.patch"
-  "libx11-depend-on-android-shmem.patch"
 
   # Fix dependencies in binutils-libs
   "binutils-libs-fix-dependencies.patch"
